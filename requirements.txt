@@ -1,0 +1,17 @@
+tsfresh
+thinc
+spacy
+transformers
+panda
+langchain-text-splitters
+hf_xet
+xformers
+google-genai
+PyPDF2
+pyodbc
+fastapi
+dotenv
+pydantic
+uvicorn
+python-multipart
+azure-identity
