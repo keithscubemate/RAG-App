@@ -1,31 +1,35 @@
-def context_base(file, file_name):
-    from langchain_text_splitters import RecursiveCharacterTextSplitter
-    from PyPDF2 import PdfReader
-    from google import genai
-    import os
-    import numpy as np
-    import re
-    from transformers import AutoTokenizer, AutoModel
-    import torch
-    from rag_core.tools import tools
-    from dotenv import load_dotenv
+import numpy as np
+import os
+import re
+import torch
 
-    
+from PyPDF2 import PdfReader
+from dotenv import load_dotenv
+from google import genai
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from scipy.spatial.distance import cosine
+from transformers import AutoTokenizer, AutoModel
+
+from rag_core.tools import tools
+
+
+def context_base(file, file_name):
     load_dotenv()
     text = ""
     pdfreader = PdfReader(file)
+
     for page in pdfreader.pages:
         text += page.extract_text()
-    
+
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=7000,
         chunk_overlap=200,
         separators=["\n\n", "\n", " ", ""]
     )
+
     big_chunks = splitter.split_text(text)
 
     print(f"File import succeeded. Original text split into {len(big_chunks)} chunks.")
-    
 
     api = os.getenv("api_key")
     client = genai.Client(api_key = os.getenv("api_key"))
@@ -60,16 +64,11 @@ def context_base(file, file_name):
 
     final_segmented_document = "\n".join(chunks)
 
-
     ai_chunks = final_segmented_document.split('**********')
-
 
     pattern = r"\.{5}\.+"
     cleaned_chunks = [re.sub(pattern, '', t) for t in ai_chunks]
     print(f"Text cleaned successfully. {len(cleaned_chunks)} segments generated.")
-
-
-
 
     model_name = "ibm-granite/granite-embedding-278m-multilingual"
     tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -94,32 +93,13 @@ def context_base(file, file_name):
     response = f"Database updated successfully with file: {file_name}"
     return response
 
-
-
-
-
 def file_deletion(file_name):
-    from rag_core.tools import tools
-
     database = tools.sqlserver()
     response = database.delete(file_name)
 
     return response
 
-
-
-
-
 def response_generation(query):
-    from transformers import AutoTokenizer, AutoModel
-    import torch
-    import numpy as np
-    from google import genai
-    import os
-    from scipy.spatial.distance import cosine
-    from rag_core.tools import tools
-
-
     print(f"Received query: {query}")
     database = tools.sqlserver()
     print('Retrieving data from sqlite database...')
@@ -158,17 +138,17 @@ def response_generation(query):
 
     print(f"Text cleaned successfully.")
     print(len(similarities), len(cleaned_chunks), len(embeddings_np))
-    
+
     bundle = []
     for i in range(len(similarities)):
         bundle.append((i, similarities[i], cleaned_chunks[i], file_name_list[i]))
     print('Bundle created successfully.')
-    
+
     def airc(tup):
         return tup[1]
 
     bundle.sort(key=airc, reverse=True)
-    
+
     context = [(a[0], a[2], a[3]) for a in bundle[:7]]
     print('Context created successfully.')
 
@@ -201,4 +181,5 @@ def response_generation(query):
         model="gemini-2.5-flash-preview-05-20", contents= prompt
     )
     print('Response generated successfully.')
+
     return (response.text, context)

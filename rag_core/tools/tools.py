@@ -44,7 +44,7 @@ class sqlite(database):
         print('sqlite database updated successfully.')
 
         return f"sqlite database updated successfully with file: {file_name}"
-    
+
 
     def delete(self, file_name):
 
@@ -76,7 +76,7 @@ class sqlite(database):
         print(response)
 
         return response
-    
+
 
     def retrieval(self):
         connection = sqlite3.connect("db.db")
@@ -102,7 +102,7 @@ class sqlite(database):
         print('Data loaded from sqlite database successfully.')
 
         return cleaned_chunks, embeddings_np, file_name_list
-    
+
 
 class sqlserver(database):
     def insert(self, cleaned_chunks, embeddings_np, file_name):
